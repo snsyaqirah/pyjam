@@ -35,7 +35,7 @@ python manage.py createsuperuser
 # Run server
 python manage.py runserver
 
-# Usage
+## Usage
 1. Visit http://127.0.0.1:8000/admin/ to log in.
 2. Add new Song with:
     - Title
