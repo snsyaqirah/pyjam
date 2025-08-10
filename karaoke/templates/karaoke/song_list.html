@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+
+{% block title %}Song List - PyJam{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <h1 class="text-center mb-4">🎵 Song Library</h1>
+            
+            {% if songs %}
+                <div class="row">
+                    {% for song in songs %}
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100 shadow-sm">
+                                <div class="card-body">
+                                    <h5 class="card-title">{{ song.title }}</h5>
+                                    <p class="card-text">
+                                        <strong>Artist:</strong> {{ song.artist }}<br>
+                                        <small class="text-muted">Duration: {{ song.duration_seconds }}s</small>
+                                    </p>
+                                </div>
+                                <div class="card-footer">
+                                    <div class="btn-group w-100" role="group">
+                                        <a href="{% url 'karaoke:karaoke_player' song.pk %}" 
+                                           class="btn btn-primary">🎤 Sing</a>
+                                        <a href="{% url 'karaoke:song_detail' song.pk %}" 
+                                           class="btn btn-outline-secondary">📝 View</a>
+                                        <a href="{% url 'karaoke:song_request' song.pk %}" 
+                                           class="btn btn-outline-success">📧 Request</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-center">
+                    <h3>No songs available yet</h3>
+                    <p>Ask the admin to add some songs!</p>
+                    <a href="/admin/" class="btn btn-primary">Go to Admin</a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

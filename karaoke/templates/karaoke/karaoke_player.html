@@ -1,0 +1,145 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ song.title }} - Karaoke{% endblock %}
+
+{% block content %}
+<div class="karaoke-container">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 mx-auto">
+                <div class="text-center text-white mb-4">
+                    <h1>{{ song.title }}</h1>
+                    <h3>{{ song.artist }}</h3>
+                </div>
+
+                <!-- Audio Player -->
+                <div class="text-center mb-4">
+                    <audio id="audioPlayer" controls class="w-100" style="max-width: 500px;">
+                        <source src="{{ song.audio_file.url }}" type="audio/mpeg">
+                        Your browser does not support the audio element.
+                    </audio>
+                </div>
+
+                <!-- Lyrics Display -->
+                <div class="lyrics-display">
+                    <div id="lyricsContainer" class="current-lyric">
+                        Click play to start karaoke! 🎤
+                    </div>
+                </div>
+
+                <!-- Controls -->
+                <div class="controls">
+                    <button id="playBtn" class="btn btn-karaoke me-2">▶️ Play</button>
+                    <button id="pauseBtn" class="btn btn-karaoke me-2">⏸️ Pause</button>
+                    <button id="restartBtn" class="btn btn-karaoke me-2">🔄 Restart</button>
+                    <a href="{% url 'karaoke:song_list' %}" class="btn btn-secondary">← Back to Songs</a>
+                </div>
+
+                <!-- Progress Bar -->
+                <div class="mt-4">
+                    <div class="progress">
+                        <div id="progressBar" class="progress-bar" role="progressbar" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const audio = document.getElementById('audioPlayer');
+    const lyricsContainer = document.getElementById('lyricsContainer');
+    const playBtn = document.getElementById('playBtn');
+    const pauseBtn = document.getElementById('pauseBtn');
+    const restartBtn = document.getElementById('restartBtn');
+    const progressBar = document.getElementById('progressBar');
+    
+    let lyrics = [];
+    let currentLyricIndex = 0;
+
+    // Fetch lyrics data
+    fetch("{% url 'karaoke:song_lyrics_json' song.pk %}")
+        .then(response => response.json())
+        .then(data => {
+            lyrics = data.sort((a, b) => a.time - b.time);
+            console.log('Loaded lyrics:', lyrics);
+        })
+        .catch(error => {
+            console.error('Error loading lyrics:', error);
+            lyricsContainer.textContent = 'Error loading lyrics';
+        });
+
+    // Update lyrics based on current time
+    function updateLyrics() {
+        if (lyrics.length === 0) return;
+        
+        const currentTime = audio.currentTime;
+        
+        // Find the current lyric
+        let newIndex = currentLyricIndex;
+        for (let i = 0; i < lyrics.length; i++) {
+            if (currentTime >= lyrics[i].time) {
+                newIndex = i;
+            } else {
+                break;
+            }
+        }
+        
+        // Update display if lyric changed
+        if (newIndex !== currentLyricIndex) {
+            currentLyricIndex = newIndex;
+            lyricsContainer.textContent = lyrics[currentLyricIndex].text;
+            lyricsContainer.style.animation = 'none';
+            setTimeout(() => {
+                lyricsContainer.style.animation = 'fadeIn 0.5s ease-in';
+            }, 10);
+        }
+    }
+
+    // Update progress bar
+    function updateProgress() {
+        if (audio.duration) {
+            const progress = (audio.currentTime / audio.duration) * 100;
+            progressBar.style.width = progress + '%';
+        }
+    }
+
+    // Event listeners
+    audio.addEventListener('timeupdate', function() {
+        updateLyrics();
+        updateProgress();
+    });
+
+    audio.addEventListener('ended', function() {
+        lyricsContainer.textContent = '🎉 Song finished! Great job!';
+        progressBar.style.width = '100%';
+    });
+
+    playBtn.addEventListener('click', () => audio.play());
+    pauseBtn.addEventListener('click', () => audio.pause());
+    restartBtn.addEventListener('click', function() {
+        audio.currentTime = 0;
+        currentLyricIndex = 0;
+        if (lyrics.length > 0) {
+            lyricsContainer.textContent = lyrics[0].text;
+        }
+        progressBar.style.width = '0%';
+    });
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', function(e) {
+        if (e.code === 'Space') {
+            e.preventDefault();
+            if (audio.paused) {
+                audio.play();
+            } else {
+                audio.pause();
+            }
+        }
+    });
+});
+</script>
+{% endblock %}
